@@ -1,0 +1,32 @@
+{
+  "name": "谷歌插件",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "browser_action": {},
+  "background": {
+    "persistent": false,
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "run_at": "document_end",
+    "js": [
+      "./content.js"
+    ]
+  }],
+  "externally_connectable": {
+    "matches": ["<all_urls>"]
+  },
+  "web_accessible_resources": [
+    "index.html",
+    "js/*",
+    "css/*",
+    "img/*"
+  ],
+  "permissions": [
+    "storage",
+    "http://*/*",
+    "https://*/*",
+    "tabs"
+  ]
+}
