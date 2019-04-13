@@ -16,6 +16,10 @@ app.use(koaBody({
   formLimit: 1024 * 1024 * 1024,
   jsonLimit: 1024 * 1024 * 1024
 }))
+router.get('/hello-world', ctx => {
+  ctx.status = 200
+  ctx.body = 'hello world , wish u have a nice day'
+})
 router.get('/download/:name', async ctx => {
   await send(ctx, ctx.request.url)
 })
