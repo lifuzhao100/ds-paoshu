@@ -12,7 +12,10 @@ const path = require('path')
 const app = new koa()
 const router = new Router()
 const port = 10987
-app.use(koaBody())
+app.use(koaBody({
+  formLimit: 1024 * 1024 * 1024,
+  jsonLimit: 1024 * 1024 * 1024
+}))
 router.get('/download/:name', async ctx => {
   await send(ctx, ctx.request.url)
 })

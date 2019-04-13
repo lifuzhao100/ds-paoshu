@@ -26,7 +26,9 @@
       </el-form-item>
       <el-form-item label="操作">
         <el-button size="small" :disabled="add_disabled" type="primary" @click="addRow">确定</el-button>
-        <el-button :disabled="upload_disabled" :loading="upload_loading" size="small" type="success" @click="upload">提交</el-button>
+        <el-button :disabled="upload_disabled" :loading="upload_loading" size="small" type="success" @click="upload">
+          提交
+        </el-button>
       </el-form-item>
     </el-form>
     <el-table
@@ -65,6 +67,7 @@
   import moment from 'moment'
   import md5 from 'js-md5'
   import qs from 'qs'
+
   let sites = [{
     title: '聚美优品',
     id: '674'
@@ -105,7 +108,7 @@
   const deepClone = (data) => JSON.parse(JSON.stringify(data))
   export default {
     name: "setting",
-    data(){
+    data() {
       return {
         form: {
           name: '',
@@ -120,7 +123,7 @@
       }
     },
     computed: {
-      urlList(){
+      urlList() {
         let urls = this.form.url
         return urls.split(/[\r\n,，]+/).filter(url => !!url)
       },
@@ -128,7 +131,7 @@
         let form = this.form
         return !(form.site && this.urlList.length)
       },
-      upload_disabled(){
+      upload_disabled() {
         let form = this.form,
           settingList = this.settingList
         return !form.name || form.date.length === 0 || settingList.length === 0
@@ -138,8 +141,8 @@
       addRow() {
         let form = this.form
         let site_name
-        for(let i = 0; i < sites.length; i++){
-          if(sites[i].id === form.site){
+        for (let i = 0; i < sites.length; i++) {
+          if (sites[i].id === form.site) {
             site_name = sites[i].title
             break
           }
@@ -157,13 +160,14 @@
         this.form.site = ''
         this.form.url = ''
       },
-      deleteRow(index){
+      deleteRow(index) {
         this.settingList.splice(index, 1)
       },
-      upload(){
+      upload() {
+
         let form = deepClone(this.form),
           settingList = this.settingList
-        if(!form.name){
+        if (!form.name) {
           this.$message({
             type: 'error',
             message: '请输入导出的文件名'
@@ -171,121 +175,127 @@
           return
         }
         form.name = form.name + '_' + moment().format('x')
-        if(!form.date.length){
+        if (!form.date.length) {
           this.$message({
             type: 'error',
             message: '请选择时间'
           })
           return
         }
-        if(!settingList.length){
+        if (!settingList.length) {
           this.$message({
             type: 'error',
             message: '请增加站点和链接'
           })
           return
         }
-        let seeds = [],
-          format = this.format,
-          start = form.date[0],
-          end = form.date[1]
-        settingList.forEach(setting => {
-          seeds = seeds.concat(setting.params)
-        })
-        this.upload_loading = true
-        axios({
-          url: `http://api.rhino.datatub.com/app/v2/start`,
-          method: 'post',
-          headers:{
-            'content-type': 'application/x-www-form-urlencoded'
-          },
-          params: {
-            injectType: 'search_support',
-            appId: 10268,
-            start: moment(start).format(format),
-            end: moment(end).format(format)
-          },
-          data: qs.stringify({
-            seeds: JSON.stringify(seeds)
+        this.$confirm('防止误触，确认后提交哦', '萌萌哒提示你', {
+          type: 'warning'
+        }).then(() => {
+          let seeds = [],
+            format = this.format,
+            start = form.date[0],
+            end = form.date[1]
+          settingList.forEach(setting => {
+            seeds = seeds.concat(setting.params)
           })
-        }).then((res) => {
-          this.upload_loading = false
-          res = res.data
-          if(!res){
+          this.upload_loading = true
+          axios({
+            url: `http://api.rhino.datatub.com/app/v2/start`,
+            method: 'post',
+            headers: {
+              'content-type': 'application/x-www-form-urlencoded'
+            },
+            params: {
+              injectType: 'search_support',
+              appId: 10268,
+              start: moment(start).format(format),
+              end: moment(end).format(format)
+            },
+            data: qs.stringify({
+              seeds: JSON.stringify(seeds)
+            })
+          }).then((res) => {
+            this.upload_loading = false
+            res = res.data
+            if (!res) {
+              this.$message({
+                type: 'error',
+                message: '提交失败'
+              })
+              return
+            }
+            if (res.result.toLowerCase() === 'success') {
+              let resultList = localStorage.getItem('resultList') || '[]'
+              try {
+                resultList = JSON.parse(resultList)
+              } catch (e) {
+                resultList = []
+              }
+              this.$message({
+                type: 'success',
+                message: '提交成功'
+              })
+              let site_and_url = [],
+                sites = []
+              seeds.forEach(seed => {
+                for (let i = 0; i < this.sites.length; i++) {
+                  let site = this.sites[i]
+                  if (site.id === seed.crawler) {
+                    if (sites.indexOf(site.title) === -1) {
+                      sites.push(site.title)
+                    }
+                    site_and_url.push({
+                      title: site.title,
+                      url: seed.full_url
+                    })
+                    break
+                  }
+                }
+
+              })
+              let id = res.id,
+                pk = md5(id).slice(0, 3)
+              resultList.unshift({
+                name: form.name,
+                id: id,
+                pk: pk,
+                url: site_and_url,
+                sites: sites.join(','),
+                _start: moment(start).format(format),
+                _end: moment(end).format(format),
+                start: moment(start, format).format('YYYY-MM-DD HH:mm:SS'),
+                end: moment(end, format).format('YYYY-MM-DD HH:mm:SS'),
+                status: 'waiting',
+                command: `sh run.sh LocalExportCli -format csv -ht 'dt.rhino.tmp.ecomm.comment' -id '${pk}|${id}' -o ${form.name}.csv -qfile eccom_cmt.qfile  -split "," -head --is_point_prefix`
+              })
+              localStorage.setItem('resultList', JSON.stringify(resultList))
+              this.$router.push({
+                path: '/result'
+              })
+              return
+            }
+            let err = res.message || res.msg || res
             this.$message({
               type: 'error',
-              message: '提交失败'
+              message: err
             })
-            return
-          }
-          if(res.result.toLowerCase() === 'success'){
-            let resultList = localStorage.getItem('resultList') || '[]'
-            try{
-              resultList = JSON.parse(resultList)
-            }catch (e) {
-              resultList = []
+          }).catch(res => {
+            this.upload_loading = false
+            let err
+            if (!res) {
+              err = '提交失败'
+            } else {
+              err = res.message || res.msg || res
             }
             this.$message({
-              type: 'success',
-              message: '提交成功'
+              type: 'error',
+              message: err
             })
-            let site_and_url = [],
-              sites = []
-            seeds.forEach(seed => {
-              for (let i = 0; i < this.sites.length; i++){
-                let site = this.sites[i]
-                if(site.id === seed.crawler){
-                  if(sites.indexOf(site.title) === -1){
-                    sites.push(site.title)
-                  }
-                  site_and_url.push({
-                    title: site.title,
-                    url: seed.full_url
-                  })
-                  break
-                }
-              }
-
-            })
-            let id = res.id,
-              pk = md5(id).slice(0,3)
-            resultList.unshift({
-              name: form.name,
-              id: id,
-              pk: pk,
-              url: site_and_url,
-              sites: sites.join(','),
-              _start: moment(start).format(format),
-              _end: moment(end).format(format),
-              start: moment(start, format).format('YYYY-MM-DD HH:mm:SS'),
-              end: moment(end, format).format('YYYY-MM-DD HH:mm:SS'),
-              status: 'waiting',
-              command: `sh run.sh LocalExportCli -format csv -ht 'dt.rhino.tmp.ecomm.comment' -id '${pk}|${id}' -o ${form.name}.csv -qfile eccom_cmt.qfile  -split "," -head --is_point_prefix`
-            })
-            localStorage.setItem('resultList', JSON.stringify(resultList))
-            this.$router.push({
-              path: '/result'
-            })
-            return
-          }
-          let err = res.message || res.msg || res
-          this.$message({
-            type: 'error',
-            message: err
           })
-        }).catch(res => {
-          this.upload_loading = false
-          let err
-          if(!res){
-            err = '提交失败'
-          }else{
-            err = res.message || res.msg || res
-          }
-          this.$message({
-            type: 'error',
-            message: err
-          })
+        }).catch(() => {
         })
+
       }
     }
   }
