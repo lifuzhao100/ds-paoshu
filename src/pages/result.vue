@@ -87,7 +87,7 @@
               </ol>
               <el-button slot="reference" size="small" type="text">线下导出</el-button>
             </el-popover>
-            <el-button size="small" type="text" :loading="scope.row.download !== 'done'" @click="download(scope.row.name)">下载</el-button>
+            <el-button style="margin-left: 12px;" size="small" type="text" :loading="scope.row.download !== 'done'" icon="el-icon-download" @click="download(scope.row.name)">下载</el-button>
           </div>
         </template>
       </el-table-column>
@@ -139,7 +139,13 @@
         }, 60000)
       },
       deleteAll(){
-        this.resultList = []
+        this.$confirm('清空后仍可通过id线下导出，前提是要有id','清空提示', {
+          type: 'error'
+        })
+          .then(() => {
+            this.resultList = []
+          })
+          .catch(() => {})
       },
       updateStatus(){
         let resultList = this.resultList
@@ -184,8 +190,7 @@
           method: 'post',
           data: qs.stringify({
             name: result.name,
-            id: result.id,
-            command: result.command
+            id: result.id
           })
         })
           .then(res => {
@@ -196,6 +201,7 @@
           })
       },
       updateDownloadStatus(result){
+        if(result.download === 'done') return
         axios({
           url: `${host}/job/status`,
           method: 'get',

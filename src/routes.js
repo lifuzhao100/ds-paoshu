@@ -6,6 +6,7 @@
 import Empty from './empty'
 import Setting from './pages/setting'
 import Result from './pages/result'
+import Md5 from './pages/md5'
 export default [{
   path: '/',
   redirect: '/setting',
@@ -16,5 +17,8 @@ export default [{
   }, {
     path: '/result',
     component: Result
+  }, {
+    path: '/md5',
+    component: Md5
   }]
 }]

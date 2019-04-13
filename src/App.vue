@@ -12,6 +12,9 @@
         <el-menu-item index="result">
           <span slot="title">结果</span>
         </el-menu-item>
+        <el-menu-item index="md5">
+          <span slot="title">md5</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

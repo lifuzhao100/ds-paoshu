@@ -41,8 +41,7 @@ router.post('/job/add', ctx => {
   if(index === -1){
     jobs.push({
       id: data.id,
-      name: data.name,
-      command: data.command
+      name: data.name
     })
   }
   ctx.body = {
@@ -62,5 +61,3 @@ app.use(router.routes())
 app.use(router.allowedMethods())
 app.listen(port)
 console.log('serve is listening at port ' + port)
-
-fs.writeFileSync('./download/ceshi2222.csv', 'hello world')
