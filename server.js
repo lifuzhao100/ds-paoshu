@@ -7,6 +7,7 @@ const koa = require('koa')
 const Router = require('koa-router')
 const koaBody = require('koa-body')
 const send = require('koa-send')
+const iconv = require('iconv-lite')
 const fs = require('fs')
 const path = require('path')
 const app = new koa()
@@ -58,7 +59,8 @@ router.post('/job/add', ctx => {
 router.post('/job/upload', ctx => {
   ctx.status = 200
   let data = ctx.request.body
-  fs.writeFileSync('./download/' + data.name + '.csv', data.data)
+  let file_content = iconv(data.data, 'GB2312')
+  fs.writeFileSync('./download/' + data.name + '.csv', file_content)
   ctx.body = {
     status: 'success'
   }
