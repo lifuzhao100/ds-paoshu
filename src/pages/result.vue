@@ -25,6 +25,7 @@
             trigger="hover"
             popper-class="site-url"
           >
+            <span>共 {{ scope.row.url.length }} 条</span>
             <el-table
               :data="scope.row.url"
               style="width: 100%">
@@ -88,6 +89,11 @@
               <el-button slot="reference" size="small" type="text">线下导出</el-button>
             </el-popover>
             <el-button style="margin-left: 12px;" size="small" type="text" :loading="scope.row.download !== 'done'" icon="el-icon-download" @click="download(scope.row.name)">下载</el-button>
+            <el-button
+              size="small"
+              type="text"
+              @click="reloadConfig(scope.row)"
+            >重载</el-button>
           </div>
         </template>
       </el-table-column>
@@ -136,7 +142,7 @@
         this.updateStatus()
         setInterval(() => {
           this.updateStatus()
-        }, 60000)
+        }, 10000)
       },
       deleteAll(){
         this.$confirm('清空后仍可通过id线下导出，前提是要有id','清空提示', {
@@ -232,6 +238,9 @@
           result.end = moment(result._end,'YYYYMMDDHHmmSS').format('YYYY-MM-DD HH:mm:SS')
         })
         this.resultList = resultList
+      },
+      reloadConfig(job){
+        location.href = '#/setting?id=' + job.id
       }
     }
   }

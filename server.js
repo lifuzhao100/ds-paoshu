@@ -58,8 +58,15 @@ router.post('/job/add', ctx => {
 })
 router.post('/job/upload', ctx => {
   ctx.status = 200
-  let data = ctx.request.body
-  let file_content = iconv(data.data, 'GB2312')
+  let data = ctx.request.body,
+    file_content = '',
+    file_data = data.data,
+    len = file_data.length
+  for (let i = 0; i < len;){
+    let end = i + 10 * 1024
+    file_content = iconv(file_data.slice(i, end))
+    i = end
+  }
   fs.writeFileSync('./download/' + data.name + '.csv', file_content)
   ctx.body = {
     status: 'success'

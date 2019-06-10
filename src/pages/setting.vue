@@ -125,7 +125,7 @@
     computed: {
       urlList() {
         let urls = this.form.url
-        return urls.split(/[\r\n,，]+/).filter(url => !!url)
+        return urls.split(/[\r\n]+/).filter(url => !!url)
       },
       add_disabled() {
         let form = this.form
@@ -137,7 +137,54 @@
         return !form.name || form.date.length === 0 || settingList.length === 0
       }
     },
+    mounted(){
+      let query = this.$route.query
+      if(query.id){
+        this.init()
+      }
+    },
     methods: {
+      init(){
+        let resultList = localStorage.getItem('resultList'),
+          err = false
+        if(!resultList) return
+        try {
+          resultList = JSON.parse(resultList)
+        }catch (e) {
+          err = true
+        }
+        if(err) return
+        let len = resultList.length,
+          query = this.$route.query,
+          current_job
+        for (let i = 0; i < len; i++){
+          let job = resultList[i]
+          if(job.id === query.id){
+            current_job = job
+            break
+          }
+        }
+        if(!current_job) return
+        this.form.name = current_job.name.replace(/_[0-9]+$/, '')
+        this.form.date = [moment(current_job.end, this.format).toDate(), moment().hour(0).minute(0).second(0).millisecond(0).toDate()]
+        this.settingList = current_job.url.map(url_item => {
+          let new_url
+          for (let i = 0; i < sites.length; i++){
+            let site = sites[i]
+            if(site.title === url_item.title){
+              new_url = {
+                site_name: site.title,
+                url: url_item.url,
+                params: [{
+                  full_url: url_item.url,
+                  crawler: site.id
+                }]
+              }
+            }
+          }
+          return new_url
+        }).filter(url_item => !!url_item)
+      },
       addRow() {
         let form = this.form
         let site_name
@@ -164,7 +211,6 @@
         this.settingList.splice(index, 1)
       },
       upload() {
-
         let form = deepClone(this.form),
           settingList = this.settingList
         if (!form.name) {
